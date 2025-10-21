@@ -1,6 +1,5 @@
 import {
   DiscountClass,
-  OrderDiscountSelectionStrategy,
   ProductDiscountSelectionStrategy,
   CartInput,
   CartLinesDiscountsGenerateRunResult,
@@ -14,77 +13,48 @@ export function cartLinesDiscountsGenerateRun(
     throw new Error('No cart lines found');
   }
 
-  const hasOrderDiscountClass = input.discount.discountClasses.includes(
-    DiscountClass.Order,
-  );
   const hasProductDiscountClass = input.discount.discountClasses.includes(
     DiscountClass.Product,
   );
 
-  if (!hasOrderDiscountClass && !hasProductDiscountClass) {
-    return {operations: []};
+  if (!hasProductDiscountClass) {
+    return { operations: [] };
   }
 
-  const maxCartLine = input.cart.lines.reduce((maxLine, line) => {
-    if (line.cost.subtotalAmount.amount > maxLine.cost.subtotalAmount.amount) {
-      return line;
+  const candidates = [];
+  const metafieldValue = input.shop.bulk_discounts?.value || '';
+  const BulkDiscountJSONFields = JSON.parse(metafieldValue)
+
+  const getNearestApplicableSlab = (quantity: number) => {
+    const slabs = BulkDiscountJSONFields;
+    for (const slab of slabs) {
+      const minQuantity = +slab.minQuantity;
+      const maxQuantity = +slab.maxQuantity;
+      if (quantity >= minQuantity && quantity <= maxQuantity) {
+        return slab;
+      }
     }
-    return maxLine;
-  }, input.cart.lines[0]);
-
-  const operations = [];
-
-  if (hasOrderDiscountClass) {
-    operations.push({
-      orderDiscountsAdd: {
-        candidates: [
-          {
-            message: '10% OFF ORDER',
-            targets: [
-              {
-                orderSubtotal: {
-                  excludedCartLineIds: [],
-                },
-              },
-            ],
-            value: {
-              percentage: {
-                value: 10,
-              },
-            },
-          },
-        ],
-        selectionStrategy: OrderDiscountSelectionStrategy.First,
-      },
-    });
   }
 
-  if (hasProductDiscountClass) {
-    operations.push({
-      productDiscountsAdd: {
-        candidates: [
-          {
-            message: '20% OFF PRODUCT',
-            targets: [
-              {
-                cartLine: {
-                  id: maxCartLine.id,
-                },
-              },
-            ],
-            value: {
-              percentage: {
-                value: 20,
-              },
-            },
-          },
-        ],
-        selectionStrategy: ProductDiscountSelectionStrategy.All,
-      },
-    });
-  }
 
-  return {
-    operations,
-  };
+  for (const line of input.cart.lines) {
+    const quantity = +(line as any).quantity as number | undefined;
+    if (quantity !== undefined) {
+      const applicableDiscountSlab = getNearestApplicableSlab(quantity);
+      const discountPercentage = +applicableDiscountSlab.discountPercentage;
+      candidates.push({
+        message: `${discountPercentage}% OFF PRODUCT`,
+        targets: [{ cartLine: { id: line.id } }],
+        value: { percentage: { value: discountPercentage } }
+      });
+    }
+  }
+  const operations = [{
+    productDiscountsAdd: {
+      candidates,
+      selectionStrategy: ProductDiscountSelectionStrategy.All
+    }
+  }]
+
+  return { operations };
 }

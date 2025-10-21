@@ -2,6 +2,7 @@ query CartInput {
   cart {
     lines {
       id
+      quantity
       cost {
         subtotalAmount {
           amount
@@ -11,5 +12,10 @@ query CartInput {
   }
   discount {
     discountClasses
+  }
+  shop {
+    bulk_discounts: metafield(namespace: "custom", key: "bulk_discounts") {
+      value
+    }
   }
 }
