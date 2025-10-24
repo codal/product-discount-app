@@ -3074,7 +3074,9 @@ export type DeliveryInputVariables = Exact<{ [key: string]: never; }>;
 
 export type DeliveryInput = { __typename?: 'Input', cart: { __typename?: 'Cart', deliveryGroups: Array<{ __typename?: 'CartDeliveryGroup', id: string }> }, discount: { __typename?: 'Discount', discountClasses: Array<DiscountClass> } };
 
-export type CartInputVariables = Exact<{ [key: string]: never; }>;
+export type CartInputVariables = Exact<{
+  collectionIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+}>;
 
 
-export type CartInput = { __typename?: 'Input', cart: { __typename?: 'Cart', lines: Array<{ __typename?: 'CartLine', id: string, quantity: number, cost: { __typename?: 'CartLineCost', subtotalAmount: { __typename?: 'MoneyV2', amount: any } } }> }, discount: { __typename?: 'Discount', discountClasses: Array<DiscountClass> }, shop: { __typename?: 'Shop', bulk_discounts?: { __typename?: 'Metafield', value: string } | null } };
+export type CartInput = { __typename?: 'Input', cart: { __typename?: 'Cart', lines: Array<{ __typename?: 'CartLine', id: string, quantity: number, cost: { __typename?: 'CartLineCost', subtotalAmount: { __typename?: 'MoneyV2', amount: any } }, merchandise: { __typename: 'CustomProduct' } | { __typename: 'ProductVariant', product: { __typename?: 'Product', id: string, title: string, inCollections: Array<{ __typename?: 'CollectionMembership', isMember: boolean }> } } }> }, discount: { __typename?: 'Discount', discountClasses: Array<DiscountClass> }, shop: { __typename?: 'Shop', bulk_discounts?: { __typename?: 'Metafield', value: string } | null } };
